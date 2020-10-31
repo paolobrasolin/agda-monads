@@ -163,3 +163,45 @@ ProgMon→MathMon {M}
     mult : {A : Set} → M (M A) → M A
     mult x = x >>= id
 
+ProgMon→FunkMon : {M : Set → Set} → ProgMon M → FunkMon M
+ProgMon→FunkMon {M}
+  record
+    { unit = unit
+    ; _>>=_ = _>>=_
+    ; unitˡ = unitˡ
+    ; unitʳ = unitʳ
+    ; assoc = assoc
+    }
+  =
+  record
+    { unit = unit
+    ; _>=>_ = _>=>_
+    ; unitˡ = {!!}
+    ; unitʳ = {!!}
+    ; assoc = {!!}
+    }
+  where
+    _>=>_ : {A B C : Set} → (A → M B) → (B → M C) → A → M C
+    _>=>_ m n x = m x >>= n
+
+FunkMon→ProgMon : {M : Set → Set} → FunkMon M → ProgMon M
+FunkMon→ProgMon {M}
+  record
+    { unit = unit
+    ; _>=>_ = _>=>_
+    ; unitˡ = unitˡ
+    ; unitʳ = unitʳ
+    ; assoc = assoc
+    }
+  =
+  record
+    { unit = unit
+    ; _>>=_ = _>>=_
+    ; unitˡ = {!!}
+    ; unitʳ = {!!}
+    ; assoc = {!!}
+    }
+  where
+    _>>=_ : {A B : Set} → M A → (A → M B) → M B
+    _>>=_ x f = (id >=> f) x -- TODO: check this, I made it up
+

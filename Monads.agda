@@ -4,6 +4,7 @@ open import Function
 open import Relation.Binary.PropositionalEquality
 open import Relation.Binary.PropositionalEquality as Eq
 open Eq.≡-Reasoning
+open import Axiom.Extensionality.Propositional as Ax
 
 {-
 TODO:
@@ -138,7 +139,8 @@ ProgMon→MathMon {M}
         fmap id                    ≡⟨⟩
         (λ x → (fmap id) x)        ≡⟨⟩
         (λ x → x >>= (unit ∘ id))  ≡⟨⟩
-        (λ x → x >>= unit)         ≡⟨ {!!} ⟩ -- by unitʳ
+        (λ x → x >>= unit)         ≡⟨⟩
+        (λ x → (id x) >>= unit)    ≡⟨ extensionality ∀unitʳ ⟩ -- by unitʳ
         (λ x → id x)               ≡⟨⟩
         id
       ∎
@@ -191,10 +193,10 @@ ProgMon→MathMon {M}
         mult ∘ fmap mult                              ≡⟨⟩
         (λ x → (mult ∘ fmap mult) x)                  ≡⟨⟩
         (λ x → (fmap mult x) >>= id)                  ≡⟨⟩
-        (λ x → (x >>= (unit ∘ mult)) >>= id)          ≡⟨ {!!} ⟩                                -- by assoc
-        (λ x → x >>= (λ y → (unit ∘ mult) y >>= id))  ≡⟨ {!!} ⟩                                -- by unitˡ
+        (λ x → (x >>= (unit ∘ mult)) >>= id)          ≡⟨ {!!} ⟩ -- by assoc
+        (λ x → x >>= (λ y → (unit ∘ mult) y >>= id))  ≡⟨ {!!} ⟩ -- by unitˡ
         (λ x → x >>= (λ y → mult y))                  ≡⟨⟩
-        (λ x → x >>= (λ y → y >>= id))                ≡⟨ {!!} ⟩                                -- by assoc
+        (λ x → x >>= (λ y → y >>= id))                ≡⟨ {!!} ⟩ -- by assoc
         (λ x → (x >>= id) >>= id)                     ≡⟨⟩
         (λ x → mult (x >>= id))                       ≡⟨⟩
         (λ x → (mult ∘ mult) x)                       ≡⟨⟩
@@ -202,10 +204,18 @@ ProgMon→MathMon {M}
       ∎
     }
   where
+    postulate
+      extensionality : ∀ {A B : Set} {f g : A → B}
+        → (∀ (x : A) → f x ≡ g x)
+        → f ≡ g
     fmap : {A B : Set} → (A → B) → M A → M B
     fmap f x = x >>= (unit ∘ f)
     mult : {A : Set} → M (M A) → M A
     mult x = x >>= id
+
+    ∀unitʳ : {A : Set} → ∀ (m : M A) → m >>= unit ≡ m
+    ∀unitʳ {A} m = unitʳ {A} {m}
+
 
 ProgMon→FunkMon : {M : Set → Set} → ProgMon M → FunkMon M
 ProgMon→FunkMon {M}

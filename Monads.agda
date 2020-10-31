@@ -34,11 +34,11 @@ record ProgMon (M : Set → Set) : Set₁ where
     unit : {A : Set} → A -> M A
     _>>=_ : {A B : Set} → M A → (A → M B) -> M B
     -- monadicity
-    unitˡ : {A B : Set} → {x : A} → {f : A → M B}
+    unitˡ : {A B : Set} → ∀ {x : A} → {f : A → M B}
       → (unit x) >>= f ≡ f x
-    unitʳ : {A : Set} → {m : M A}
+    unitʳ : {A : Set} → ∀ {m : M A}
       → m >>= unit ≡ m
-    assoc : {A B C : Set} → {x : A} → {f : A → M B} → {g : B → M C} → {m : M A}
+    assoc : {A B C : Set} → ∀ {x : A} → {f : A → M B} → {g : B → M C} → {m : M A}
       → (m >>= f) >>= g ≡ m >>= λ{x → f x >>= g}
 
 record FunkMon (M : Set → Set) : Set₁ where
@@ -140,7 +140,7 @@ ProgMon→MathMon {M}
         (λ x → (fmap id) x)        ≡⟨⟩
         (λ x → x >>= (unit ∘ id))  ≡⟨⟩
         (λ x → x >>= unit)         ≡⟨⟩
-        (λ x → (id x) >>= unit)    ≡⟨ extensionality ∀unitʳ ⟩ -- by unitʳ
+        (λ x → (id x) >>= unit)    ≡⟨ extensionality unitʳ ⟩
         (λ x → id x)               ≡⟨⟩
         id
       ∎
@@ -204,17 +204,14 @@ ProgMon→MathMon {M}
       ∎
     }
   where
-    postulate
-      extensionality : ∀ {A B : Set} {f g : A → B}
-        → (∀ (x : A) → f x ≡ g x)
-        → f ≡ g
     fmap : {A B : Set} → (A → B) → M A → M B
     fmap f x = x >>= (unit ∘ f)
     mult : {A : Set} → M (M A) → M A
     mult x = x >>= id
-
-    ∀unitʳ : {A : Set} → ∀ (m : M A) → m >>= unit ≡ m
-    ∀unitʳ {A} m = unitʳ {A} {m}
+    postulate
+      extensionality : ∀ {A B : Set} {f g : A → B}
+        → (∀ {x : A} → f x ≡ g x)
+        → f ≡ g
 
 
 ProgMon→FunkMon : {M : Set → Set} → ProgMon M → FunkMon M

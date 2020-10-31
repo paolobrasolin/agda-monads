@@ -100,6 +100,66 @@ MathMon→ProgMon {M}
       _>>=_ : {A B : Set} → M A → (A → M B) -> M B
       _>>=_ x f = mult (fmap f x)
 
-
-
+ProgMon→MathMon : {M : Set → Set} → ProgMon M → MathMon M
+ProgMon→MathMon {M}
+  record
+    { unit = unit
+    ; _>>=_ = _>>=_
+    ; unitˡ = unitˡ
+    ; unitʳ = unitʳ
+    ; assoc = assoc
+    }
+  =
+  record
+    { fmap = fmap
+    ; unit = unit
+    ; mult = mult
+    ; fun-composition = λ {_} {_} {_} {f} {g} →
+      begin
+        fmap (f ∘ g)
+      ≡⟨ {!!} ⟩
+        fmap f ∘ fmap g
+      ∎
+    ; fun-identity =
+      begin
+        fmap id
+      ≡⟨ {!!} ⟩
+        id
+      ∎
+    ; nat-unit = λ {_} {_} {f} →
+      begin
+        fmap f ∘ unit
+      ≡⟨ {!!} ⟩
+        unit ∘ f
+      ∎
+    ; nat-comp = λ {_} {_} {f} →
+      begin
+        fmap f ∘ mult
+      ≡⟨ {!!} ⟩
+        mult ∘ fmap (fmap f)
+      ∎
+    ; con-unit₁ =
+      begin
+        mult ∘ fmap unit
+      ≡⟨ {!!} ⟩
+        id
+      ∎
+    ; con-unit₂ =
+      begin
+        mult ∘ unit
+      ≡⟨ {!!} ⟩
+        id
+      ∎
+    ; con-mult =
+      begin
+        mult ∘ fmap mult
+      ≡⟨ {!!} ⟩
+        mult ∘ mult
+      ∎
+    }
+  where
+    fmap : {A B : Set} → (A → B) → M A → M B
+    fmap f x = x >>= (unit ∘ f)
+    mult : {A : Set} → M (M A) → M A
+    mult x = x >>= id
 

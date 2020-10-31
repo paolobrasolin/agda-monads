@@ -130,7 +130,7 @@ ProgMon→MathMon {M}
         (λ x → x >>= (λ y → (unit ∘ g) y >>= (unit ∘ f)))  ≡⟨ {!!} ⟩ -- by assoc
         (λ x → ((x >>= (unit ∘ g)) >>= (unit ∘ f)))        ≡⟨⟩
         (λ x → (fmap f) (x >>= (unit ∘ g)))                ≡⟨⟩
-        (λ x → ((fmap f) ∘ (fmap g)) x)                    ≡⟨⟩
+        (λ x → (fmap f ∘ fmap g) x)                        ≡⟨⟩
         fmap f ∘ fmap g
       ∎
     ; fun-identity =
@@ -139,18 +139,21 @@ ProgMon→MathMon {M}
         (λ x → (fmap id) x)        ≡⟨⟩
         (λ x → x >>= (unit ∘ id))  ≡⟨⟩
         (λ x → x >>= unit)         ≡⟨ {!!} ⟩ -- by unitʳ
-        (λ x → x)                  ≡⟨⟩
+        (λ x → id x)               ≡⟨⟩
         id
       ∎
     ; nat-unit = λ {_} {_} {f} →
       begin
-        fmap f ∘ unit                  ≡⟨ {!!} ⟩
+        fmap f ∘ unit                  ≡⟨⟩
+        (λ x → (fmap f ∘ unit) x)      ≡⟨⟩
         (λ x → unit x >>= (unit ∘ f))  ≡⟨ {!!} ⟩ -- by unitˡ
+        (λ x → (unit ∘ f) x)           ≡⟨⟩
         unit ∘ f
       ∎
     ; nat-comp = λ {_} {_} {f} →
       begin
         fmap f ∘ mult                                       ≡⟨⟩
+        (λ x → (fmap f ∘ mult) x)                           ≡⟨⟩
         (λ x → (mult x) >>= (unit ∘ f))                     ≡⟨⟩
         (λ x → (x >>= id) >>= (unit ∘ f))                   ≡⟨ {!!} ⟩ -- by assoc
         (λ x → x >>= (λ y → id y >>= (unit ∘ f)))           ≡⟨⟩
@@ -166,22 +169,27 @@ ProgMon→MathMon {M}
     ; con-unit₁ =
       begin
         mult ∘ fmap unit                            ≡⟨⟩
+        (λ x → (mult ∘ fmap unit) x)                ≡⟨⟩
         (λ x → fmap unit x >>= id)                  ≡⟨⟩
-        (λ x → (x >>= (unit ∘ unit)) >>= id)        ≡⟨ {!!} ⟩                          -- by assoc
-        (λ x → x >>= (λ y → unit (unit y) >>= id))  ≡⟨ {!!} ⟩                           -- by unitˡ
-        (λ x → x >>= (λ y → unit y))                ≡⟨⟩                                 -- by unitʳ
-        (λ x → x >>= unit)                          ≡⟨ {!!} ⟩
+        (λ x → (x >>= (unit ∘ unit)) >>= id)        ≡⟨ {!!} ⟩ -- by assoc
+        (λ x → x >>= (λ y → unit (unit y) >>= id))  ≡⟨ {!!} ⟩ -- by unitˡ
+        (λ x → x >>= (λ y → unit y))                ≡⟨⟩
+        (λ x → x >>= unit)                          ≡⟨ {!!} ⟩ -- by unitʳ
+        (λ x → id x)                                ≡⟨⟩
         id
       ∎
     ; con-unit₂ =
       begin
-        mult ∘ unit            ≡⟨⟩
-        (λ x → unit x >>= id)  ≡⟨ {!!} ⟩ -- unitˡ
+        mult ∘ unit              ≡⟨⟩
+        (λ x → (mult ∘ unit) x)  ≡⟨⟩
+        (λ x → unit x >>= id)    ≡⟨ {!!} ⟩ -- unitˡ
+        (λ x → id x)             ≡⟨⟩
         id
       ∎
     ; con-mult =
       begin
         mult ∘ fmap mult                              ≡⟨⟩
+        (λ x → (mult ∘ fmap mult) x)                  ≡⟨⟩
         (λ x → (fmap mult x) >>= id)                  ≡⟨⟩
         (λ x → (x >>= (unit ∘ mult)) >>= id)          ≡⟨ {!!} ⟩                                -- by assoc
         (λ x → x >>= (λ y → (unit ∘ mult) y >>= id))  ≡⟨ {!!} ⟩                                -- by unitˡ
@@ -189,6 +197,7 @@ ProgMon→MathMon {M}
         (λ x → x >>= (λ y → y >>= id))                ≡⟨ {!!} ⟩                                -- by assoc
         (λ x → (x >>= id) >>= id)                     ≡⟨⟩
         (λ x → mult (x >>= id))                       ≡⟨⟩
+        (λ x → (mult ∘ mult) x)                       ≡⟨⟩
         mult ∘ mult
       ∎
     }

@@ -12,6 +12,10 @@ TODO:
   * set precedence of _>>=_ and _>=>_ w/ respect to ∘ in order to remove a few parantheses
 -}
 
+postulate
+  ext : ∀ {A B : Set} {f g : A → B}
+    → (∀ {x : A} → f x ≡ g x)
+    → f ≡ g
 
 record MathMon (M : Set → Set) : Set₁ where
   field
@@ -208,10 +212,6 @@ ProgMon→MathMon {M}
     fmap f x = x >>= (unit ∘ f)
     mult : {A : Set} → M (M A) → M A
     mult x = x >>= id
-    postulate
-      ext : ∀ {A B : Set} {f g : A → B}
-        → (∀ {x : A} → f x ≡ g x)
-        → f ≡ g
 
 
 ProgMon→FunkMon : {M : Set → Set} → ProgMon M → FunkMon M
@@ -229,20 +229,23 @@ ProgMon→FunkMon {M}
     ; _>=>_ = _>=>_
     ; unitˡ = λ {_} {_} {g} →
             begin
-              unit >=> g
-            ≡⟨ {!!} ⟩
+              unit >=> g            ≡⟨⟩
+              (λ x → unit x >>= g)  ≡⟨ ext unitˡ ⟩
+              (λ x → g x)           ≡⟨⟩
               g
             ∎
     ; unitʳ = λ {_} {_} {f} →
             begin
-              f >=> unit
-            ≡⟨ {!!} ⟩
+              f >=> unit            ≡⟨⟩
+              (λ x → f x >>= unit)  ≡⟨ ext unitʳ ⟩
+              (λ x → f x)           ≡⟨⟩
               f
             ∎
     ; assoc = λ {_} {_} {_} {_} {f} {g} {h} →
             begin
-              (f >=> g) >=> h
-            ≡⟨ {!!} ⟩
+              (f >=> g) >=> h                    ≡⟨⟩
+              (λ x → (f x >>= g) >>= h)          ≡⟨ ext assoc ⟩
+              (λ x → f x >>= (λ y → g y >>= h))  ≡⟨⟩
               f >=> (g >=> h)
             ∎
     }
@@ -265,20 +268,26 @@ FunkMon→ProgMon {M}
     ; _>>=_ = _>>=_
     ; unitˡ = λ {_} {_} {x} {f} →
             begin
-              (unit x) >>= f
-            ≡⟨ {!!} ⟩
+              (unit x) >>= f       ≡⟨⟩
+              (id >=> f) (unit x)  ≡⟨ {!!} ⟩ -- TODO
+              (unit >=> f) (x)     ≡⟨ cong-app unitˡ x ⟩
               f x
             ∎
     ; unitʳ = λ {_} {m} →
             begin
-              m >>= unit
-            ≡⟨ {!!} ⟩
+              m >>= unit       ≡⟨⟩
+              (id >=> unit) m  ≡⟨ cong-app unitʳ m ⟩
               m
             ∎
     ; assoc = λ {_} {_} {_} {m} {f} {g} →
             begin
-              (m >>= f) >>= g
-            ≡⟨ {!!} ⟩
+              (m >>= f) >>= g                      ≡⟨⟩
+              (id >=> g) (m >>= f)                 ≡⟨⟩
+              (id >=> g) ((id >=> f) m)            ≡⟨ {!!} ⟩ -- TODO
+              ((id >=> f) >=> g) m                 ≡⟨ cong-app assoc m ⟩
+              (id >=> (f >=> g)) m                 ≡⟨ {!!} ⟩ -- TODO
+              (id >=> (λ{x → (id >=> g)(f x)})) m  ≡⟨⟩
+              (id >=> (λ{x → f x >>= g})) m        ≡⟨⟩
               m >>= (λ{x → f x >>= g})
             ∎
     }

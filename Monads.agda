@@ -5,6 +5,13 @@ open import Relation.Binary.PropositionalEquality
 open import Relation.Binary.PropositionalEquality as Eq
 open Eq.≡-Reasoning
 
+{-
+TODO:
+  * use levels in definitions to account for more general sizes
+  * set precedence of _>>=_ and _>=>_ w/ respect to ∘ in order to remove a few parantheses
+-}
+
+
 record MathMon (M : Set → Set) : Set₁ where
   field
     fmap : {A B : Set} → (A → B) → M A → M B
@@ -116,44 +123,72 @@ ProgMon→MathMon {M}
     ; mult = mult
     ; fun-composition = λ {_} {_} {_} {f} {g} →
       begin
-        fmap (f ∘ g)
-      ≡⟨ {!!} ⟩
+        fmap (f ∘ g)                                       ≡⟨⟩
+        (λ x → fmap (f ∘ g) x)                             ≡⟨⟩
+        (λ x → x >>= (unit ∘ (f ∘ g)))                     ≡⟨⟩
+        (λ x → x >>= (λ y → (unit ∘ f ∘ g) y))             ≡⟨ {!!} ⟩ -- by unitˡ
+        (λ x → x >>= (λ y → (unit ∘ g) y >>= (unit ∘ f)))  ≡⟨ {!!} ⟩ -- by assoc
+        (λ x → ((x >>= (unit ∘ g)) >>= (unit ∘ f)))        ≡⟨⟩
+        (λ x → (fmap f) (x >>= (unit ∘ g)))                ≡⟨⟩
+        (λ x → ((fmap f) ∘ (fmap g)) x)                    ≡⟨⟩
         fmap f ∘ fmap g
       ∎
     ; fun-identity =
       begin
-        fmap id
-      ≡⟨ {!!} ⟩
+        fmap id                    ≡⟨⟩
+        (λ x → (fmap id) x)        ≡⟨⟩
+        (λ x → x >>= (unit ∘ id))  ≡⟨⟩
+        (λ x → x >>= unit)         ≡⟨ {!!} ⟩ -- by unitʳ
+        (λ x → x)                  ≡⟨⟩
         id
       ∎
     ; nat-unit = λ {_} {_} {f} →
       begin
-        fmap f ∘ unit
-      ≡⟨ {!!} ⟩
+        fmap f ∘ unit                  ≡⟨ {!!} ⟩
+        (λ x → unit x >>= (unit ∘ f))  ≡⟨ {!!} ⟩ -- by unitˡ
         unit ∘ f
       ∎
     ; nat-comp = λ {_} {_} {f} →
       begin
-        fmap f ∘ mult
-      ≡⟨ {!!} ⟩
+        fmap f ∘ mult                                       ≡⟨⟩
+        (λ x → (mult x) >>= (unit ∘ f))                     ≡⟨⟩
+        (λ x → (x >>= id) >>= (unit ∘ f))                   ≡⟨ {!!} ⟩ -- by assoc
+        (λ x → x >>= (λ y → id y >>= (unit ∘ f)))           ≡⟨⟩
+        (λ x → x >>= (λ y → y >>= (unit ∘ f)))              ≡⟨⟩
+        (λ x → x >>= (λ y → fmap f y))                      ≡⟨⟩
+        (λ x → x >>= (λ y → (id ∘ (fmap f)) y))             ≡⟨ {!!} ⟩ -- ?
+        (λ x → x >>= (λ y → ((unit ∘ (fmap f)) y) >>= id))  ≡⟨ {!!} ⟩ -- by assoc
+        (λ x → (x >>= (unit ∘ (fmap f))) >>= id)            ≡⟨⟩
+        (λ x → (fmap (fmap f) x) >>= id)                    ≡⟨⟩
+        (λ x → (mult ∘ fmap (fmap f)) x)                    ≡⟨⟩
         mult ∘ fmap (fmap f)
       ∎
     ; con-unit₁ =
       begin
-        mult ∘ fmap unit
-      ≡⟨ {!!} ⟩
+        mult ∘ fmap unit                            ≡⟨⟩
+        (λ x → fmap unit x >>= id)                  ≡⟨⟩
+        (λ x → (x >>= (unit ∘ unit)) >>= id)        ≡⟨ {!!} ⟩                          -- by assoc
+        (λ x → x >>= (λ y → unit (unit y) >>= id))  ≡⟨ {!!} ⟩                           -- by unitˡ
+        (λ x → x >>= (λ y → unit y))                ≡⟨⟩                                 -- by unitʳ
+        (λ x → x >>= unit)                          ≡⟨ {!!} ⟩
         id
       ∎
     ; con-unit₂ =
       begin
-        mult ∘ unit
-      ≡⟨ {!!} ⟩
+        mult ∘ unit            ≡⟨⟩
+        (λ x → unit x >>= id)  ≡⟨ {!!} ⟩ -- unitˡ
         id
       ∎
     ; con-mult =
       begin
-        mult ∘ fmap mult
-      ≡⟨ {!!} ⟩
+        mult ∘ fmap mult                              ≡⟨⟩
+        (λ x → (fmap mult x) >>= id)                  ≡⟨⟩
+        (λ x → (x >>= (unit ∘ mult)) >>= id)          ≡⟨ {!!} ⟩                                -- by assoc
+        (λ x → x >>= (λ y → (unit ∘ mult) y >>= id))  ≡⟨ {!!} ⟩                                -- by unitˡ
+        (λ x → x >>= (λ y → mult y))                  ≡⟨⟩
+        (λ x → x >>= (λ y → y >>= id))                ≡⟨ {!!} ⟩                                -- by assoc
+        (λ x → (x >>= id) >>= id)                     ≡⟨⟩
+        (λ x → mult (x >>= id))                       ≡⟨⟩
         mult ∘ mult
       ∎
     }

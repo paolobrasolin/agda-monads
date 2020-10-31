@@ -38,7 +38,7 @@ record ProgMon (M : Set → Set) : Set₁ where
       → (unit x) >>= f ≡ f x
     unitʳ : {A : Set} → ∀ {m : M A}
       → m >>= unit ≡ m
-    assoc : {A B C : Set} → ∀ {x : A} → {f : A → M B} → {g : B → M C} → {m : M A}
+    assoc : {A B C : Set} → ∀ {m : M A} → {f : A → M B} → {g : B → M C}
       → (m >>= f) >>= g ≡ m >>= λ{x → f x >>= g}
 
 record FunkMon (M : Set → Set) : Set₁ where
@@ -89,7 +89,7 @@ MathMon→ProgMon {M}
               id m                  ≡⟨⟩
               m
             ∎
-    ; assoc = λ {_} {_} {_} {_} {f} {g} {m} →
+    ; assoc = λ {_} {_} {_} {m} {f} {g} →
             begin
               ((m >>= f) >>= g)                         ≡⟨⟩
               (mult (fmap f m)) >>= g                   ≡⟨⟩
@@ -127,8 +127,8 @@ ProgMon→MathMon {M}
         fmap (f ∘ g)                                       ≡⟨⟩
         (λ x → fmap (f ∘ g) x)                             ≡⟨⟩
         (λ x → x >>= (unit ∘ (f ∘ g)))                     ≡⟨⟩
-        (λ x → x >>= (λ y → (unit ∘ f ∘ g) y))             ≡⟨ {!!} ⟩ -- by unitˡ
-        (λ x → x >>= (λ y → (unit ∘ g) y >>= (unit ∘ f)))  ≡⟨ {!!} ⟩ -- by assoc
+        (λ x → x >>= (λ y → (unit ∘ f ∘ g) y))             ≡⟨ ext (λ {x} → cong (_>>=_ x) (ext (sym unitˡ))) ⟩
+        (λ x → x >>= (λ y → (unit ∘ g) y >>= (unit ∘ f)))  ≡⟨ ext (sym assoc) ⟩
         (λ x → ((x >>= (unit ∘ g)) >>= (unit ∘ f)))        ≡⟨⟩
         (λ x → (fmap f) (x >>= (unit ∘ g)))                ≡⟨⟩
         (λ x → (fmap f ∘ fmap g) x)                        ≡⟨⟩
@@ -140,7 +140,7 @@ ProgMon→MathMon {M}
         (λ x → (fmap id) x)        ≡⟨⟩
         (λ x → x >>= (unit ∘ id))  ≡⟨⟩
         (λ x → x >>= unit)         ≡⟨⟩
-        (λ x → (id x) >>= unit)    ≡⟨ extensionality unitʳ ⟩
+        (λ x → (id x) >>= unit)    ≡⟨ ext unitʳ ⟩
         (λ x → id x)               ≡⟨⟩
         id
       ∎
@@ -148,7 +148,7 @@ ProgMon→MathMon {M}
       begin
         fmap f ∘ unit                  ≡⟨⟩
         (λ x → (fmap f ∘ unit) x)      ≡⟨⟩
-        (λ x → unit x >>= (unit ∘ f))  ≡⟨ {!!} ⟩ -- by unitˡ
+        (λ x → unit x >>= (unit ∘ f))  ≡⟨ ext unitˡ ⟩
         (λ x → (unit ∘ f) x)           ≡⟨⟩
         unit ∘ f
       ∎
@@ -157,12 +157,12 @@ ProgMon→MathMon {M}
         fmap f ∘ mult                                       ≡⟨⟩
         (λ x → (fmap f ∘ mult) x)                           ≡⟨⟩
         (λ x → (mult x) >>= (unit ∘ f))                     ≡⟨⟩
-        (λ x → (x >>= id) >>= (unit ∘ f))                   ≡⟨ {!!} ⟩ -- by assoc
+        (λ x → (x >>= id) >>= (unit ∘ f))                   ≡⟨ ext assoc ⟩
         (λ x → x >>= (λ y → id y >>= (unit ∘ f)))           ≡⟨⟩
         (λ x → x >>= (λ y → y >>= (unit ∘ f)))              ≡⟨⟩
         (λ x → x >>= (λ y → fmap f y))                      ≡⟨⟩
-        (λ x → x >>= (λ y → (id ∘ (fmap f)) y))             ≡⟨ {!!} ⟩ -- ?
-        (λ x → x >>= (λ y → ((unit ∘ (fmap f)) y) >>= id))  ≡⟨ {!!} ⟩ -- by assoc
+        (λ x → x >>= (λ y → (id ∘ (fmap f)) y))             ≡⟨ ext (λ {x} → cong (_>>=_ x) (ext (sym unitˡ))) ⟩
+        (λ x → x >>= (λ y → ((unit ∘ (fmap f)) y) >>= id))  ≡⟨ ext (sym assoc) ⟩
         (λ x → (x >>= (unit ∘ (fmap f))) >>= id)            ≡⟨⟩
         (λ x → (fmap (fmap f) x) >>= id)                    ≡⟨⟩
         (λ x → (mult ∘ fmap (fmap f)) x)                    ≡⟨⟩
@@ -173,10 +173,10 @@ ProgMon→MathMon {M}
         mult ∘ fmap unit                            ≡⟨⟩
         (λ x → (mult ∘ fmap unit) x)                ≡⟨⟩
         (λ x → fmap unit x >>= id)                  ≡⟨⟩
-        (λ x → (x >>= (unit ∘ unit)) >>= id)        ≡⟨ {!!} ⟩ -- by assoc
-        (λ x → x >>= (λ y → unit (unit y) >>= id))  ≡⟨ {!!} ⟩ -- by unitˡ
+        (λ x → (x >>= (unit ∘ unit)) >>= id)        ≡⟨ ext assoc ⟩
+        (λ x → x >>= (λ y → unit (unit y) >>= id))  ≡⟨ ext (λ {x} → cong (_>>=_ x) (ext unitˡ)) ⟩
         (λ x → x >>= (λ y → unit y))                ≡⟨⟩
-        (λ x → x >>= unit)                          ≡⟨ {!!} ⟩ -- by unitʳ
+        (λ x → x >>= unit)                          ≡⟨ ext unitʳ ⟩
         (λ x → id x)                                ≡⟨⟩
         id
       ∎
@@ -184,7 +184,7 @@ ProgMon→MathMon {M}
       begin
         mult ∘ unit              ≡⟨⟩
         (λ x → (mult ∘ unit) x)  ≡⟨⟩
-        (λ x → unit x >>= id)    ≡⟨ {!!} ⟩ -- unitˡ
+        (λ x → unit x >>= id)    ≡⟨ ext unitˡ ⟩
         (λ x → id x)             ≡⟨⟩
         id
       ∎
@@ -193,10 +193,10 @@ ProgMon→MathMon {M}
         mult ∘ fmap mult                              ≡⟨⟩
         (λ x → (mult ∘ fmap mult) x)                  ≡⟨⟩
         (λ x → (fmap mult x) >>= id)                  ≡⟨⟩
-        (λ x → (x >>= (unit ∘ mult)) >>= id)          ≡⟨ {!!} ⟩ -- by assoc
-        (λ x → x >>= (λ y → (unit ∘ mult) y >>= id))  ≡⟨ {!!} ⟩ -- by unitˡ
+        (λ x → (x >>= (unit ∘ mult)) >>= id)          ≡⟨ ext assoc ⟩
+        (λ x → x >>= (λ y → (unit ∘ mult) y >>= id))  ≡⟨ ext (λ {x} → cong (_>>=_ x) (ext unitˡ)) ⟩
         (λ x → x >>= (λ y → mult y))                  ≡⟨⟩
-        (λ x → x >>= (λ y → y >>= id))                ≡⟨ {!!} ⟩ -- by assoc
+        (λ x → x >>= (λ y → y >>= id))                ≡⟨ ext (sym assoc) ⟩
         (λ x → (x >>= id) >>= id)                     ≡⟨⟩
         (λ x → mult (x >>= id))                       ≡⟨⟩
         (λ x → (mult ∘ mult) x)                       ≡⟨⟩
@@ -209,7 +209,7 @@ ProgMon→MathMon {M}
     mult : {A : Set} → M (M A) → M A
     mult x = x >>= id
     postulate
-      extensionality : ∀ {A B : Set} {f g : A → B}
+      ext : ∀ {A B : Set} {f g : A → B}
         → (∀ {x : A} → f x ≡ g x)
         → f ≡ g
 

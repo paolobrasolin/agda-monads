@@ -227,9 +227,24 @@ ProgMon→FunkMon {M}
   record
     { unit = unit
     ; _>=>_ = _>=>_
-    ; unitˡ = {!!}
-    ; unitʳ = {!!}
-    ; assoc = {!!}
+    ; unitˡ = λ {_} {_} {g} →
+            begin
+              unit >=> g
+            ≡⟨ {!!} ⟩
+              g
+            ∎
+    ; unitʳ = λ {_} {_} {f} →
+            begin
+              f >=> unit
+            ≡⟨ {!!} ⟩
+              f
+            ∎
+    ; assoc = λ {_} {_} {_} {_} {f} {g} {h} →
+            begin
+              (f >=> g) >=> h
+            ≡⟨ {!!} ⟩
+              f >=> (g >=> h)
+            ∎
     }
   where
     _>=>_ : {A B C : Set} → (A → M B) → (B → M C) → A → M C
@@ -248,9 +263,24 @@ FunkMon→ProgMon {M}
   record
     { unit = unit
     ; _>>=_ = _>>=_
-    ; unitˡ = {!!}
-    ; unitʳ = {!!}
-    ; assoc = {!!}
+    ; unitˡ = λ {_} {_} {x} {f} →
+            begin
+              (unit x) >>= f
+            ≡⟨ {!!} ⟩
+              f x
+            ∎
+    ; unitʳ = λ {_} {m} →
+            begin
+              m >>= unit
+            ≡⟨ {!!} ⟩
+              m
+            ∎
+    ; assoc = λ {_} {_} {_} {m} {f} {g} →
+            begin
+              (m >>= f) >>= g
+            ≡⟨ {!!} ⟩
+              m >>= (λ{x → f x >>= g})
+            ∎
     }
   where
     _>>=_ : {A B : Set} → M A → (A → M B) → M B

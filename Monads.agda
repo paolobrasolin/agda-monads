@@ -269,7 +269,7 @@ FunkMon→ProgMon {M}
     ; unitˡ = λ {_} {_} {x} {f} →
             begin
               (unit x) >>= f       ≡⟨⟩
-              (id >=> f) (unit x)  ≡⟨ {!!} ⟩ -- TODO
+              (id >=> f) (unit x)  ≡⟨ sym foo ⟩
               (unit >=> f) (x)     ≡⟨ cong-app unitˡ x ⟩
               f x
             ∎
@@ -283,9 +283,11 @@ FunkMon→ProgMon {M}
             begin
               (m >>= f) >>= g                      ≡⟨⟩
               (id >=> g) (m >>= f)                 ≡⟨⟩
-              (id >=> g) ((id >=> f) m)            ≡⟨ {!!} ⟩ -- TODO
+              (id >=> g) ((id >=> f) m)            ≡⟨⟩
+              ((id >=> g) ∘ (id >=> f)) m          ≡⟨ sym foo ⟩
               ((id >=> f) >=> g) m                 ≡⟨ cong-app assoc m ⟩
-              (id >=> (f >=> g)) m                 ≡⟨ {!!} ⟩ -- TODO
+              (id >=> (f >=> g)) m                 ≡⟨⟩
+              (id >=> (λ{x → (f >=> g) x})) m      ≡⟨ cong-app (cong (_>=>_ id) (ext foo)) m ⟩
               (id >=> (λ{x → (id >=> g)(f x)})) m  ≡⟨⟩
               (id >=> (λ{x → f x >>= g})) m        ≡⟨⟩
               m >>= (λ{x → f x >>= g})
@@ -293,5 +295,10 @@ FunkMon→ProgMon {M}
     }
   where
     _>>=_ : {A B : Set} → M A → (A → M B) → M B
-    _>>=_ x f = (id >=> f) x -- TODO: check this, I made it up
+    _>>=_ ma f = (id >=> f) ma
+    -- _>>=_ ma f = ((λ _ → ma) >=> f) _ -- NOTE: usually one sees this in Haskell
+    postulate
+      -- TODO: I'm both unable to prove this and unable to find another way
+      foo : {A B C : Set} → {f : A → M B} → {g : B → M C} → ∀ {x : A}
+        → (f >=> g) x ≡ ((id >=> g) ∘ f) x
 

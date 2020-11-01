@@ -372,32 +372,45 @@ FunkMon→MathMon {M}
     ; mult = mult
     ; fun-composition = λ {_} {_} {_} {f} {g} →
       begin
-        fmap (f ∘ g)                                       ≡⟨ {!!} ⟩
+        fmap (f ∘ g)                               ≡⟨⟩
+        id >=> (unit ∘ (f ∘ g))                    ≡⟨ {!!} ⟩
+        id >=> ((unit ∘ g) >=> (unit ∘ f))         ≡⟨ {!!} ⟩
+        ((id >=> (unit ∘ g)) >=> (unit ∘ f))       ≡⟨ {!!} ⟩
+        (id >=> (unit ∘ f)) ∘ (id >=> (unit ∘ g))  ≡⟨⟩
         fmap f ∘ fmap g
       ∎
     ; fun-identity =
       begin
-        fmap id                    ≡⟨ {!!} ⟩
+        fmap id             ≡⟨⟩
+        id >=> (unit ∘ id)  ≡⟨⟩
+        id >=> unit         ≡⟨ unitʳ ⟩
         id
       ∎
     ; nat-unit = λ {_} {_} {f} →
       begin
-        fmap f ∘ unit                  ≡⟨ {!!} ⟩
+        fmap f ∘ unit               ≡⟨⟩
+        (id >=> (unit ∘ f)) ∘ unit  ≡⟨ {!!} ⟩
+        unit >=> (unit ∘ f)         ≡⟨ unitˡ ⟩
         unit ∘ f
       ∎
     ; nat-comp = λ {_} {_} {f} →
       begin
-        fmap f ∘ mult                                       ≡⟨ {!!} ⟩
+        fmap f ∘ mult                                        ≡⟨⟩
+        (id >=> (unit ∘ f)) ∘ (id >=> id)                    ≡⟨ {!!} ⟩
+        (id >=> id) ∘ (id >=> (unit ∘ (id >=> (unit ∘ f))))  ≡⟨⟩
         mult ∘ fmap (fmap f)
       ∎
     ; con-unit₁ =
       begin
-        mult ∘ fmap unit                            ≡⟨ {!!} ⟩
+        mult ∘ fmap unit                      ≡⟨⟩
+        (id >=> id) ∘ (id >=> (unit ∘ unit))  ≡⟨ {!!} ⟩
         id
       ∎
     ; con-unit₂ =
       begin
-        mult ∘ unit              ≡⟨ {!!} ⟩
+        mult ∘ unit         ≡⟨⟩
+        (id >=> id) ∘ unit  ≡⟨ {!!} ⟩
+        unit >=> id         ≡⟨ unitˡ ⟩
         id
       ∎
     ; con-mult =

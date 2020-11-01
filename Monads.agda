@@ -42,7 +42,7 @@ record ProgMon (M : Set → Set) : Set₁ where
       → (unit x) >>= f ≡ f x
     unitʳ : ∀ {A : Set} → ∀ {m : M A}
       → m >>= unit ≡ m
-    assoc : ∀ {A B C : Set} → ∀ {x : A} → ∀ {f : A → M B} → ∀ {g : B → M C} → ∀ {m : M A}
+    assoc : ∀ {A B C : Set} → ∀ {m : M A} → ∀ {f : A → M B} → ∀ {g : B → M C}
       → (m >>= f) >>= g ≡ m >>= λ{x → f x >>= g}
 
 record FunkMon (M : Set → Set) : Set₁ where

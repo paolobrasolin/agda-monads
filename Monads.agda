@@ -12,6 +12,10 @@ TODO:
   * set precedence of _>>=_ and _>=>_ w/ respect to ∘ in order to remove a few parantheses
 -}
 
+postulate
+  ext : ∀ {A B : Set} {f g : A → B}
+    → (∀ {x : A} → f x ≡ g x)
+    → f ≡ g
 
 record MathMon (M : Set → Set) : Set₁ where
   field
@@ -89,7 +93,7 @@ MathMon→ProgMon {M}
               id m                  ≡⟨⟩
               m
             ∎
-    ; assoc = λ {_} {_} {_} {_} {f} {g} {m} →
+    ; assoc = λ {_} {_} {_} {m} {f} {g} →
             begin
               ((m >>= f) >>= g)                         ≡⟨⟩
               (mult (fmap f m)) >>= g                   ≡⟨⟩
@@ -127,8 +131,8 @@ ProgMon→MathMon {M}
         fmap (f ∘ g)                                       ≡⟨⟩
         (λ x → fmap (f ∘ g) x)                             ≡⟨⟩
         (λ x → x >>= (unit ∘ (f ∘ g)))                     ≡⟨⟩
-        (λ x → x >>= (λ y → (unit ∘ f ∘ g) y))             ≡⟨ {!!} ⟩ -- by unitˡ
-        (λ x → x >>= (λ y → (unit ∘ g) y >>= (unit ∘ f)))  ≡⟨ {!!} ⟩ -- by assoc
+        (λ x → x >>= (λ y → (unit ∘ f ∘ g) y))             ≡⟨ ext (λ {x} → cong (_>>=_ x) (ext (sym unitˡ))) ⟩
+        (λ x → x >>= (λ y → (unit ∘ g) y >>= (unit ∘ f)))  ≡⟨ ext (sym assoc) ⟩
         (λ x → ((x >>= (unit ∘ g)) >>= (unit ∘ f)))        ≡⟨⟩
         (λ x → (fmap f) (x >>= (unit ∘ g)))                ≡⟨⟩
         (λ x → (fmap f ∘ fmap g) x)                        ≡⟨⟩
@@ -140,7 +144,7 @@ ProgMon→MathMon {M}
         (λ x → (fmap id) x)        ≡⟨⟩
         (λ x → x >>= (unit ∘ id))  ≡⟨⟩
         (λ x → x >>= unit)         ≡⟨⟩
-        (λ x → (id x) >>= unit)    ≡⟨ extensionality ∀unitʳ ⟩ -- by unitʳ
+        (λ x → (id x) >>= unit)    ≡⟨ ext unitʳ ⟩
         (λ x → id x)               ≡⟨⟩
         id
       ∎
@@ -148,7 +152,7 @@ ProgMon→MathMon {M}
       begin
         fmap f ∘ unit                  ≡⟨⟩
         (λ x → (fmap f ∘ unit) x)      ≡⟨⟩
-        (λ x → unit x >>= (unit ∘ f))  ≡⟨ {!!} ⟩ -- by unitˡ
+        (λ x → unit x >>= (unit ∘ f))  ≡⟨ ext unitˡ ⟩
         (λ x → (unit ∘ f) x)           ≡⟨⟩
         unit ∘ f
       ∎
@@ -157,12 +161,12 @@ ProgMon→MathMon {M}
         fmap f ∘ mult                                       ≡⟨⟩
         (λ x → (fmap f ∘ mult) x)                           ≡⟨⟩
         (λ x → (mult x) >>= (unit ∘ f))                     ≡⟨⟩
-        (λ x → (x >>= id) >>= (unit ∘ f))                   ≡⟨ {!!} ⟩ -- by assoc
+        (λ x → (x >>= id) >>= (unit ∘ f))                   ≡⟨ ext assoc ⟩
         (λ x → x >>= (λ y → id y >>= (unit ∘ f)))           ≡⟨⟩
         (λ x → x >>= (λ y → y >>= (unit ∘ f)))              ≡⟨⟩
         (λ x → x >>= (λ y → fmap f y))                      ≡⟨⟩
-        (λ x → x >>= (λ y → (id ∘ (fmap f)) y))             ≡⟨ {!!} ⟩ -- ?
-        (λ x → x >>= (λ y → ((unit ∘ (fmap f)) y) >>= id))  ≡⟨ {!!} ⟩ -- by assoc
+        (λ x → x >>= (λ y → (id ∘ (fmap f)) y))             ≡⟨ ext (λ {x} → cong (_>>=_ x) (ext (sym unitˡ))) ⟩
+        (λ x → x >>= (λ y → ((unit ∘ (fmap f)) y) >>= id))  ≡⟨ ext (sym assoc) ⟩
         (λ x → (x >>= (unit ∘ (fmap f))) >>= id)            ≡⟨⟩
         (λ x → (fmap (fmap f) x) >>= id)                    ≡⟨⟩
         (λ x → (mult ∘ fmap (fmap f)) x)                    ≡⟨⟩
@@ -173,10 +177,10 @@ ProgMon→MathMon {M}
         mult ∘ fmap unit                            ≡⟨⟩
         (λ x → (mult ∘ fmap unit) x)                ≡⟨⟩
         (λ x → fmap unit x >>= id)                  ≡⟨⟩
-        (λ x → (x >>= (unit ∘ unit)) >>= id)        ≡⟨ {!!} ⟩ -- by assoc
-        (λ x → x >>= (λ y → unit (unit y) >>= id))  ≡⟨ {!!} ⟩ -- by unitˡ
+        (λ x → (x >>= (unit ∘ unit)) >>= id)        ≡⟨ ext assoc ⟩
+        (λ x → x >>= (λ y → unit (unit y) >>= id))  ≡⟨ ext (λ {x} → cong (_>>=_ x) (ext unitˡ)) ⟩
         (λ x → x >>= (λ y → unit y))                ≡⟨⟩
-        (λ x → x >>= unit)                          ≡⟨ {!!} ⟩ -- by unitʳ
+        (λ x → x >>= unit)                          ≡⟨ ext unitʳ ⟩
         (λ x → id x)                                ≡⟨⟩
         id
       ∎
@@ -184,7 +188,7 @@ ProgMon→MathMon {M}
       begin
         mult ∘ unit              ≡⟨⟩
         (λ x → (mult ∘ unit) x)  ≡⟨⟩
-        (λ x → unit x >>= id)    ≡⟨ {!!} ⟩ -- unitˡ
+        (λ x → unit x >>= id)    ≡⟨ ext unitˡ ⟩
         (λ x → id x)             ≡⟨⟩
         id
       ∎
@@ -193,10 +197,10 @@ ProgMon→MathMon {M}
         mult ∘ fmap mult                              ≡⟨⟩
         (λ x → (mult ∘ fmap mult) x)                  ≡⟨⟩
         (λ x → (fmap mult x) >>= id)                  ≡⟨⟩
-        (λ x → (x >>= (unit ∘ mult)) >>= id)          ≡⟨ {!!} ⟩ -- by assoc
-        (λ x → x >>= (λ y → (unit ∘ mult) y >>= id))  ≡⟨ {!!} ⟩ -- by unitˡ
+        (λ x → (x >>= (unit ∘ mult)) >>= id)          ≡⟨ ext assoc ⟩
+        (λ x → x >>= (λ y → (unit ∘ mult) y >>= id))  ≡⟨ ext (λ {x} → cong (_>>=_ x) (ext unitˡ)) ⟩
         (λ x → x >>= (λ y → mult y))                  ≡⟨⟩
-        (λ x → x >>= (λ y → y >>= id))                ≡⟨ {!!} ⟩ -- by assoc
+        (λ x → x >>= (λ y → y >>= id))                ≡⟨ ext (sym assoc) ⟩
         (λ x → (x >>= id) >>= id)                     ≡⟨⟩
         (λ x → mult (x >>= id))                       ≡⟨⟩
         (λ x → (mult ∘ mult) x)                       ≡⟨⟩
@@ -204,17 +208,10 @@ ProgMon→MathMon {M}
       ∎
     }
   where
-    postulate
-      extensionality : ∀ {A B : Set} {f g : A → B}
-        → (∀ (x : A) → f x ≡ g x)
-        → f ≡ g
     fmap : {A B : Set} → (A → B) → M A → M B
     fmap f x = x >>= (unit ∘ f)
     mult : {A : Set} → M (M A) → M A
     mult x = x >>= id
-
-    ∀unitʳ : {A : Set} → ∀ (m : M A) → m >>= unit ≡ m
-    ∀unitʳ {A} m = unitʳ {A} {m}
 
 
 ProgMon→FunkMon : {M : Set → Set} → ProgMon M → FunkMon M
@@ -230,9 +227,27 @@ ProgMon→FunkMon {M}
   record
     { unit = unit
     ; _>=>_ = _>=>_
-    ; unitˡ = {!!}
-    ; unitʳ = {!!}
-    ; assoc = {!!}
+    ; unitˡ = λ {_} {_} {g} →
+            begin
+              unit >=> g            ≡⟨⟩
+              (λ x → unit x >>= g)  ≡⟨ ext unitˡ ⟩
+              (λ x → g x)           ≡⟨⟩
+              g
+            ∎
+    ; unitʳ = λ {_} {_} {f} →
+            begin
+              f >=> unit            ≡⟨⟩
+              (λ x → f x >>= unit)  ≡⟨ ext unitʳ ⟩
+              (λ x → f x)           ≡⟨⟩
+              f
+            ∎
+    ; assoc = λ {_} {_} {_} {_} {f} {g} {h} →
+            begin
+              (f >=> g) >=> h                    ≡⟨⟩
+              (λ x → (f x >>= g) >>= h)          ≡⟨ ext assoc ⟩
+              (λ x → f x >>= (λ y → g y >>= h))  ≡⟨⟩
+              f >=> (g >=> h)
+            ∎
     }
   where
     _>=>_ : {A B C : Set} → (A → M B) → (B → M C) → A → M C
@@ -251,11 +266,151 @@ FunkMon→ProgMon {M}
   record
     { unit = unit
     ; _>>=_ = _>>=_
-    ; unitˡ = {!!}
-    ; unitʳ = {!!}
-    ; assoc = {!!}
+    ; unitˡ = λ {_} {_} {x} {f} →
+            begin
+              (unit x) >>= f       ≡⟨⟩
+              (id >=> f) (unit x)  ≡⟨ sym foo ⟩
+              (unit >=> f) (x)     ≡⟨ cong-app unitˡ x ⟩
+              f x
+            ∎
+    ; unitʳ = λ {_} {m} →
+            begin
+              m >>= unit       ≡⟨⟩
+              (id >=> unit) m  ≡⟨ cong-app unitʳ m ⟩
+              m
+            ∎
+    ; assoc = λ {_} {_} {_} {m} {f} {g} →
+            begin
+              (m >>= f) >>= g                      ≡⟨⟩
+              (id >=> g) (m >>= f)                 ≡⟨⟩
+              (id >=> g) ((id >=> f) m)            ≡⟨⟩
+              ((id >=> g) ∘ (id >=> f)) m          ≡⟨ sym foo ⟩
+              ((id >=> f) >=> g) m                 ≡⟨ cong-app assoc m ⟩
+              (id >=> (f >=> g)) m                 ≡⟨⟩
+              (id >=> (λ{x → (f >=> g) x})) m      ≡⟨ cong-app (cong (_>=>_ id) (ext foo)) m ⟩
+              (id >=> (λ{x → (id >=> g)(f x)})) m  ≡⟨⟩
+              (id >=> (λ{x → f x >>= g})) m        ≡⟨⟩
+              m >>= (λ{x → f x >>= g})
+            ∎
     }
   where
     _>>=_ : {A B : Set} → M A → (A → M B) → M B
-    _>>=_ x f = (id >=> f) x -- TODO: check this, I made it up
+    _>>=_ ma f = (id >=> f) ma
+    -- _>>=_ ma f = ((λ _ → ma) >=> f) () -- NOTE: usually one sees this in Haskell
+    postulate
+      -- TODO: I'm both unable to prove this and unable to find another way
+      foo : {A B C : Set} → {f : A → M B} → {g : B → M C} → ∀ {x : A}
+        → (f >=> g) x ≡ ((id >=> g) ∘ f) x
+
+
+MathMon→FunkMon : {M : Set → Set} → MathMon M → FunkMon M
+MathMon→FunkMon {M}
+  record
+    { fmap = fmap
+    ; unit = unit
+    ; mult = mult
+    ; fun-composition = fun-composition
+    ; fun-identity = _
+    ; nat-unit = nat-unit
+    ; nat-comp = nat-comp
+    ; con-unit₁ = con-unit₁
+    ; con-unit₂ = con-unit₂
+    ; con-mult = con-mult
+    }
+  =
+  record
+    { unit = unit
+    ; _>=>_ = _>=>_
+    ; unitˡ = λ {_} {_} {g} →
+            begin
+              unit >=> g              ≡⟨⟩
+              mult ∘ (fmap g) ∘ unit  ≡⟨ ext (λ {x} → cong mult (cong-app nat-unit x)) ⟩
+              mult ∘ unit ∘ g         ≡⟨ ext (λ {x} → cong-app con-unit₂ (g x)) ⟩
+              id ∘ g                  ≡⟨⟩
+              g
+            ∎
+    ; unitʳ = λ {_} {_} {f} →
+            begin
+              f >=> unit              ≡⟨⟩
+              mult ∘ (fmap unit) ∘ f  ≡⟨ ext (λ {x} → cong-app con-unit₁ (f x)) ⟩
+              id ∘ f                  ≡⟨⟩
+              f
+            ∎
+    ; assoc = λ {_} {_} {_} {_} {f} {g} {h} →
+            begin
+              (f >=> g) >=> h                                      ≡⟨⟩
+              (mult ∘ (fmap g) ∘ f) >=> h                          ≡⟨⟩
+              mult ∘ (fmap h) ∘ mult ∘ (fmap g) ∘ f                ≡⟨ ext (λ {x} → cong mult (cong-app nat-comp (((fmap g) ∘ f) x))) ⟩
+              mult ∘ mult ∘ (fmap (fmap h)) ∘ (fmap g) ∘ f         ≡⟨ ext (λ {x} → cong-app (sym con-mult) (((fmap (fmap h)) ∘ (fmap g) ∘ f) x) ) ⟩
+              mult ∘ (fmap mult) ∘ (fmap (fmap h)) ∘ (fmap g) ∘ f  ≡⟨ ext (λ {x} → cong mult (cong-app (sym fun-composition) (((fmap g) ∘ f) x))) ⟩
+              mult ∘ (fmap (mult ∘ (fmap h))) ∘ (fmap g) ∘ f       ≡⟨ ext (λ {x} → cong mult (cong-app (sym fun-composition) (f x))) ⟩
+              mult ∘ (fmap (mult ∘ (fmap h) ∘ g)) ∘ f              ≡⟨⟩
+              f >=> (mult ∘ (fmap h) ∘ g)                          ≡⟨⟩
+              f >=> (g >=> h)
+            ∎
+    }
+  where
+    _>=>_ : {A B C : Set} → (A → M B) → (B → M C) → A → M C
+    _>=>_ f g x = mult (fmap g (f x))
+    -- _●_●_ : {!!} -- TODO: finish this helper to rewrite the proofs
+    -- a ● p ● z = ext (λ {x} → cong a (cong-app p (z x)))
+
+
+FunkMon→MathMon : {M : Set → Set} → FunkMon M → MathMon M
+FunkMon→MathMon {M}
+  record
+    { unit = unit
+    ; _>=>_ = _>=>_
+    ; unitˡ = unitˡ
+    ; unitʳ = unitʳ
+    ; assoc = assoc
+    }
+  =
+  record
+    { fmap = fmap
+    ; unit = unit
+    ; mult = mult
+    ; fun-composition = λ {_} {_} {_} {f} {g} →
+      begin
+        fmap (f ∘ g)                                       ≡⟨ {!!} ⟩
+        fmap f ∘ fmap g
+      ∎
+    ; fun-identity =
+      begin
+        fmap id                    ≡⟨ {!!} ⟩
+        id
+      ∎
+    ; nat-unit = λ {_} {_} {f} →
+      begin
+        fmap f ∘ unit                  ≡⟨ {!!} ⟩
+        unit ∘ f
+      ∎
+    ; nat-comp = λ {_} {_} {f} →
+      begin
+        fmap f ∘ mult                                       ≡⟨ {!!} ⟩
+        mult ∘ fmap (fmap f)
+      ∎
+    ; con-unit₁ =
+      begin
+        mult ∘ fmap unit                            ≡⟨ {!!} ⟩
+        id
+      ∎
+    ; con-unit₂ =
+      begin
+        mult ∘ unit              ≡⟨ {!!} ⟩
+        id
+      ∎
+    ; con-mult =
+      begin
+        mult ∘ fmap mult                              ≡⟨ {!!} ⟩
+        mult ∘ mult
+      ∎
+    }
+  where
+    fmap : {A B : Set} → (A → B) → M A → M B
+    fmap f x = (id >=> (unit ∘ f)) x
+    mult : {A : Set} → M (M A) → M A
+    mult x = (id >=> id) x
+
+
 

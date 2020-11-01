@@ -296,9 +296,121 @@ FunkMon→ProgMon {M}
   where
     _>>=_ : {A B : Set} → M A → (A → M B) → M B
     _>>=_ ma f = (id >=> f) ma
-    -- _>>=_ ma f = ((λ _ → ma) >=> f) _ -- NOTE: usually one sees this in Haskell
+    -- _>>=_ ma f = ((λ _ → ma) >=> f) () -- NOTE: usually one sees this in Haskell
     postulate
       -- TODO: I'm both unable to prove this and unable to find another way
       foo : {A B C : Set} → {f : A → M B} → {g : B → M C} → ∀ {x : A}
         → (f >=> g) x ≡ ((id >=> g) ∘ f) x
+
+
+MathMon→FunkMon : {M : Set → Set} → MathMon M → FunkMon M
+MathMon→FunkMon {M}
+  record
+    { fmap = fmap
+    ; unit = unit
+    ; mult = mult
+    ; fun-composition = fun-composition
+    ; fun-identity = _
+    ; nat-unit = nat-unit
+    ; nat-comp = nat-comp
+    ; con-unit₁ = con-unit₁
+    ; con-unit₂ = con-unit₂
+    ; con-mult = con-mult
+    }
+  =
+  record
+    { unit = unit
+    ; _>=>_ = _>=>_
+    ; unitˡ = λ {_} {_} {g} →
+            begin
+              unit >=> g              ≡⟨⟩
+              mult ∘ (fmap g) ∘ unit  ≡⟨ ext (λ {x} → cong mult (cong-app nat-unit x)) ⟩
+              mult ∘ unit ∘ g         ≡⟨ ext (λ {x} → cong-app con-unit₂ (g x)) ⟩
+              id ∘ g                  ≡⟨⟩
+              g
+            ∎
+    ; unitʳ = λ {_} {_} {f} →
+            begin
+              f >=> unit              ≡⟨⟩
+              mult ∘ (fmap unit) ∘ f  ≡⟨ ext (λ {x} → cong-app con-unit₁ (f x)) ⟩
+              id ∘ f                  ≡⟨⟩
+              f
+            ∎
+    ; assoc = λ {_} {_} {_} {_} {f} {g} {h} →
+            begin
+              (f >=> g) >=> h                                      ≡⟨⟩
+              (mult ∘ (fmap g) ∘ f) >=> h                          ≡⟨⟩
+              mult ∘ (fmap h) ∘ mult ∘ (fmap g) ∘ f                ≡⟨ ext (λ {x} → cong mult (cong-app nat-comp (((fmap g) ∘ f) x))) ⟩
+              mult ∘ mult ∘ (fmap (fmap h)) ∘ (fmap g) ∘ f         ≡⟨ ext (λ {x} → cong-app (sym con-mult) (((fmap (fmap h)) ∘ (fmap g) ∘ f) x) ) ⟩
+              mult ∘ (fmap mult) ∘ (fmap (fmap h)) ∘ (fmap g) ∘ f  ≡⟨ ext (λ {x} → cong mult (cong-app (sym fun-composition) (((fmap g) ∘ f) x))) ⟩
+              mult ∘ (fmap (mult ∘ (fmap h))) ∘ (fmap g) ∘ f       ≡⟨ ext (λ {x} → cong mult (cong-app (sym fun-composition) (f x))) ⟩
+              mult ∘ (fmap (mult ∘ (fmap h) ∘ g)) ∘ f              ≡⟨⟩
+              f >=> (mult ∘ (fmap h) ∘ g)                          ≡⟨⟩
+              f >=> (g >=> h)
+            ∎
+    }
+  where
+    _>=>_ : {A B C : Set} → (A → M B) → (B → M C) → A → M C
+    _>=>_ f g x = mult (fmap g (f x))
+    -- _●_●_ : {!!} -- TODO: finish this helper to rewrite the proofs
+    -- a ● p ● z = ext (λ {x} → cong a (cong-app p (z x)))
+
+
+FunkMon→MathMon : {M : Set → Set} → FunkMon M → MathMon M
+FunkMon→MathMon {M}
+  record
+    { unit = unit
+    ; _>=>_ = _>=>_
+    ; unitˡ = unitˡ
+    ; unitʳ = unitʳ
+    ; assoc = assoc
+    }
+  =
+  record
+    { fmap = fmap
+    ; unit = unit
+    ; mult = mult
+    ; fun-composition = λ {_} {_} {_} {f} {g} →
+      begin
+        fmap (f ∘ g)                                       ≡⟨ {!!} ⟩
+        fmap f ∘ fmap g
+      ∎
+    ; fun-identity =
+      begin
+        fmap id                    ≡⟨ {!!} ⟩
+        id
+      ∎
+    ; nat-unit = λ {_} {_} {f} →
+      begin
+        fmap f ∘ unit                  ≡⟨ {!!} ⟩
+        unit ∘ f
+      ∎
+    ; nat-comp = λ {_} {_} {f} →
+      begin
+        fmap f ∘ mult                                       ≡⟨ {!!} ⟩
+        mult ∘ fmap (fmap f)
+      ∎
+    ; con-unit₁ =
+      begin
+        mult ∘ fmap unit                            ≡⟨ {!!} ⟩
+        id
+      ∎
+    ; con-unit₂ =
+      begin
+        mult ∘ unit              ≡⟨ {!!} ⟩
+        id
+      ∎
+    ; con-mult =
+      begin
+        mult ∘ fmap mult                              ≡⟨ {!!} ⟩
+        mult ∘ mult
+      ∎
+    }
+  where
+    fmap : {A B : Set} → (A → B) → M A → M B
+    fmap f x = (id >=> (unit ∘ f)) x
+    mult : {A : Set} → M (M A) → M A
+    mult x = (id >=> id) x
+
+
 

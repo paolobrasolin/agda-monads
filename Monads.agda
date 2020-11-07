@@ -57,6 +57,38 @@ record FunkMon (M : Set → Set) : Set₁ where
     assoc : ∀ {A B C D : Set} {f : A → M B} {g : B → M C} {h : C → M D}
       → (f >=> g) >=> h ≡ f >=> (g >=> h)
 
+record KleisliMon (M : Set → Set) : Set₁ where
+  field
+    _⋆ : {A B : Set} → (A → M B) → (M A → M B)
+    unit : {A : Set} → A -> M A
+    _>=>_ : {A B C : Set} → (A → M B) → (B → M C) → (A → M C)
+    -- monadicity
+    unitˡ : ∀ {A C : Set} {g : A → M C}
+      → unit >=> g ≡ g
+    unitʳ : ∀ {A B : Set} {f : A → M B}
+      → f >=> unit ≡ f
+    assoc : ∀ {A B C D : Set} {f : A → M B} {g : B → M C} {h : C → M D}
+      → (f >=> g) >=> h ≡ f >=> (g >=> h)
+    -- extension operator
+    -- extension axioms
+    ext₁ : ∀ {A : Set}
+      → (unit {A} ⋆) ≡ id
+    ext₂ : ∀ {A B : Set} {f : A → M B}
+      → (f ⋆) ∘ unit ≡ f
+    ext₃ : ∀ {A B C : Set} {f : A → M B} {g : B → M C}
+      → ((g ⋆) ∘ f)⋆ ≡ (g ⋆) ∘ (f ⋆)
+    -- extension consistency with fish
+    ext₄ : ∀ {A B C : Set} {f : A → M B} {g : B → M C}
+      → f >=> g ≡ (g ⋆) ∘ f
+    -- so, the extension operator is actually
+    -- (g ⋆) ≡ id >=> g
+    ext₁′ : ∀ {A : Set}
+      → (id >=> unit {A}) ≡ id -- follows from unitʳ
+    ext₂′ : ∀ {A B : Set} {f : A → M B}
+      → (id >=> f) ∘ unit ≡ f -- follows from nothing
+    ext₃′ : ∀ {A B C : Set} {f : A → M B} {g : B → M C}
+      → id >=> ((id >=> g) ∘ f) ≡ (id >=> g) ∘ (id >=> f)
+
 
 MathMon→ProgMon : {M : Set → Set} → MathMon M → ProgMon M
 MathMon→ProgMon {M}
@@ -370,9 +402,10 @@ FunkMon→MathMon {M}
     ; fun-composition = λ {_} {_} {_} {f} {g} →
       begin
         fmap (f ∘ g)                               ≡⟨⟩
-        id >=> (unit ∘ (f ∘ g))                    ≡⟨ cong (_>=>_ id) (sym boyah) ⟩
-        id >=> ((unit ∘ g) >=> (unit ∘ f))         ≡⟨ sym assoc ⟩
-        (id >=> (unit ∘ g)) >=> (unit ∘ f)         ≡⟨ magic ⟩
+        id >=> (unit ∘ (f ∘ g))                    ≡⟨⟩
+        id >=> ((unit ∘ f) ∘ g)                    ≡⟨ {!!} ⟩ -- ext2
+        id >=> (((id >=> (unit ∘ f)) ∘ unit) ∘ g)  ≡⟨⟩
+        id >=> ((id >=> (unit ∘ f)) ∘ (unit ∘ g))  ≡⟨ {!!} ⟩ -- ext3
         (id >=> (unit ∘ f)) ∘ (id >=> (unit ∘ g))  ≡⟨⟩
         fmap f ∘ fmap g
       ∎
@@ -386,15 +419,13 @@ FunkMon→MathMon {M}
     ; nat-unit = λ {_} {_} {f} →
       begin
         fmap f ∘ unit               ≡⟨⟩
-        (id >=> (unit ∘ f)) ∘ unit  ≡⟨ sym magic ⟩
-        unit >=> (unit ∘ f)         ≡⟨ unitˡ ⟩
+        (id >=> (unit ∘ f)) ∘ unit  ≡⟨ {!!} ⟩ -- ext2
         unit ∘ f
       ∎
     ; nat-comp = λ {_} {_} {f} →
       begin
         fmap f ∘ mult                                        ≡⟨⟩
         (id >=> (unit ∘ f)) ∘ (id >=> id)                    ≡⟨ {!!} ⟩
-        (id >=> id) ∘ (id >=> (unit ∘ (id >=> (unit ∘ f))))  ≡⟨⟩
         mult ∘ fmap (fmap f)
       ∎
     ; con-unit₁ =
@@ -414,16 +445,27 @@ FunkMon→MathMon {M}
     ; con-unit₂ =
       begin
         mult ∘ unit         ≡⟨⟩
-        (id >=> id) ∘ unit  ≡⟨ sym magic ⟩
-        unit >=> id         ≡⟨ unitˡ ⟩
+        -- (id* ∘ id) ∘ unit
+        -- id* ∘ unit
+        -- id
+        (id >=> id) ∘ unit  ≡⟨ {!!} ⟩ -- ext2
         id
       ∎
     ; con-mult =
       begin
         mult ∘ fmap mult                             ≡⟨⟩
-        (id >=> id) ∘ (id >=> (unit ∘ (id >=> id)))  ≡⟨ {!!} ⟩
+        -- (id* ∘ id) ∘ (unit ∘ (id* ∘ id))* ∘ id
+        -- id* ∘ (unit ∘ id*)*
+        (id >=> id) ∘ (id >=> (unit ∘ (id >=> id)))  ≡⟨ {!!} ⟩ -- ext3
+        (id >=> ((id >=> id) ∘ unit ∘ (id >=> id)))  ≡⟨ {!!} ⟩ -- ext2
+        (id >=> (id ∘ (id >=> id)))                  ≡⟨⟩
+        (id >=> ((id >=> id) ∘ id))                  ≡⟨ {!!} ⟩ -- ext3
         (id >=> id) ∘ (id >=> id)                    ≡⟨⟩
+        -- (id* ∘ id) ∘ (id* ∘ id)
         mult ∘ mult
+        -- → (id >=> unit {A}) ≡ id
+        -- → (id >=> f) ∘ unit ≡ f
+        -- → id >=> ((id >=> g) ∘ f) ≡ (id >=> g) ∘ (id >=> f)
       ∎
     }
   where

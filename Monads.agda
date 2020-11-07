@@ -273,7 +273,7 @@ FunkMon→ProgMon {M}
     ; unitˡ = λ {_} {_} {x} {f} →
             begin
               (unit x) >>= f       ≡⟨⟩
-              (id >=> f) (unit x)  ≡⟨ sym foo ⟩
+              (id >=> f) (unit x)  ≡⟨ sym magic ⟩
               (unit >=> f) (x)     ≡⟨ cong-app unitˡ x ⟩
               f x
             ∎
@@ -288,10 +288,10 @@ FunkMon→ProgMon {M}
               (m >>= f) >>= g                      ≡⟨⟩
               (id >=> g) (m >>= f)                 ≡⟨⟩
               (id >=> g) ((id >=> f) m)            ≡⟨⟩
-              ((id >=> g) ∘ (id >=> f)) m          ≡⟨ sym foo ⟩
+              ((id >=> g) ∘ (id >=> f)) m          ≡⟨ sym magic ⟩
               ((id >=> f) >=> g) m                 ≡⟨ cong-app assoc m ⟩
               (id >=> (f >=> g)) m                 ≡⟨⟩
-              (id >=> (λ{x → (f >=> g) x})) m      ≡⟨ cong-app (cong (_>=>_ id) (ext foo)) m ⟩
+              (id >=> (λ{x → (f >=> g) x})) m      ≡⟨ cong-app (cong (_>=>_ id) (ext magic)) m ⟩
               (id >=> (λ{x → (id >=> g)(f x)})) m  ≡⟨⟩
               (id >=> (λ{x → f x >>= g})) m        ≡⟨⟩
               m >>= (λ{x → f x >>= g})
@@ -303,10 +303,8 @@ FunkMon→ProgMon {M}
     -- _>>=_ ma f = ((λ _ → ma) >=> f) () -- NOTE: usually one sees this in Haskell
     postulate
       -- TODO: I'm both unable to prove this and unable to find another way
-      foo : {A B C : Set} → {f : A → M B} → {g : B → M C} → ∀ {x : A}
+      magic : {A B C : Set} → {f : A → M B} → {g : B → M C} → ∀ {x : A}
         → (f >=> g) x ≡ ((id >=> g) ∘ f) x
-      bar : {A B C : Set} → {f : A → M B} → {g : B → M C} → ∀ {x : A}
-        → (f >=> g) x ≡ ((id >=> g) ∘ (f >=> id)) x
 
 
 MathMon→FunkMon : {M : Set → Set} → MathMon M → FunkMon M
@@ -376,9 +374,9 @@ FunkMon→MathMon {M}
     ; fun-composition = λ {_} {_} {_} {f} {g} →
       begin
         fmap (f ∘ g)                               ≡⟨⟩
-        id >=> (unit ∘ (f ∘ g))                    ≡⟨ {!!} ⟩
+        id >=> (unit ∘ (f ∘ g))                    ≡⟨ cong (_>=>_ id) (sym boyah) ⟩
         id >=> ((unit ∘ g) >=> (unit ∘ f))         ≡⟨ sym assoc ⟩
-        (id >=> (unit ∘ g)) >=> (unit ∘ f)         ≡⟨ ext foo ⟩
+        (id >=> (unit ∘ g)) >=> (unit ∘ f)         ≡⟨ magic ⟩
         (id >=> (unit ∘ f)) ∘ (id >=> (unit ∘ g))  ≡⟨⟩
         fmap f ∘ fmap g
       ∎
@@ -392,7 +390,7 @@ FunkMon→MathMon {M}
     ; nat-unit = λ {_} {_} {f} →
       begin
         fmap f ∘ unit               ≡⟨⟩
-        (id >=> (unit ∘ f)) ∘ unit  ≡⟨ ext (sym foo) ⟩
+        (id >=> (unit ∘ f)) ∘ unit  ≡⟨ sym magic ⟩
         unit >=> (unit ∘ f)         ≡⟨ unitˡ ⟩
         unit ∘ f
       ∎
@@ -407,32 +405,28 @@ FunkMon→MathMon {M}
       begin
         mult ∘ fmap unit                      ≡⟨⟩
         (id >=> id) ∘ (id >=> (unit ∘ unit))  ≡⟨ {!!} ⟩
+        ((id >=> (unit ∘ unit)) >=> id)       ≡⟨ assoc ⟩
+        (id >=> ((unit ∘ unit) >=> id))       ≡⟨ {!!} ⟩
+        (id >=> ((unit >=> id) ∘ unit))       ≡⟨ {!unitˡ!} ⟩
+        (id >=> (id ∘ unit))                  ≡⟨ {!!} ⟩
         (id >=> id) ∘ ((id >=> unit) ∘ unit)  ≡⟨ {!!} ⟩
         (id >=> id) ∘ (id ∘ unit)             ≡⟨⟩
-        (id >=> id) ∘ unit                    ≡⟨ ext (sym foo) ⟩
+        (id >=> id) ∘ unit                    ≡⟨ sym magic ⟩
         (unit >=> id)                         ≡⟨ unitˡ ⟩
         id
       ∎
-    {-
-    ; con-unit₂ =
-      begin
-      mult ∘ unit              ≡⟨⟩
-      (λ x → (mult ∘ unit) x)  ≡⟨⟩
-      (λ x → unit x >>= id)    ≡⟨ ext unitˡ ⟩
-      (λ x → id x)             ≡⟨⟩
-      id
-      ∎
-    -}
     ; con-unit₂ =
       begin
         mult ∘ unit         ≡⟨⟩
-        (id >=> id) ∘ unit  ≡⟨ ext (sym foo) ⟩
+        (id >=> id) ∘ unit  ≡⟨ sym magic ⟩
         unit >=> id         ≡⟨ unitˡ ⟩
         id
       ∎
     ; con-mult =
       begin
-        mult ∘ fmap mult                              ≡⟨ {!!} ⟩
+        mult ∘ fmap mult                             ≡⟨⟩
+        (id >=> id) ∘ (id >=> (unit ∘ (id >=> id)))  ≡⟨ {!!} ⟩
+        (id >=> id) ∘ (id >=> id)                    ≡⟨⟩
         mult ∘ mult
       ∎
     }
@@ -440,11 +434,13 @@ FunkMon→MathMon {M}
     fmap : {A B : Set} → (A → B) → M A → M B
     fmap f x = (id >=> (unit ∘ f)) x
     mult : {A : Set} → M (M A) → M A
-    mult x = (id >=> id) x -- prima id è su M (M A), seconda su M A
+    mult x = (id >=> id) x
     postulate
       -- TODO: I'm both unable to prove this and unable to find another way
-      foo : {A B C : Set} → {f : A → M B} → {g : B → M C} → ∀ {x : A}
-        → (f >=> g) x ≡ ((id >=> g) ∘ f) x
+      magic : {A B C : Set} → {f : A → M B} → {g : B → M C}
+        → (f >=> g) ≡ (id >=> g) ∘ f
+      boyah : {A B C : Set} → {f : A → B} → {g : B → C}
+        → (unit ∘ f) >=> (unit ∘ g) ≡ unit ∘ (g ∘ f)
 
 
 

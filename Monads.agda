@@ -4,10 +4,6 @@ open import Function
 open import Relation.Binary.PropositionalEquality
 open import Relation.Binary.PropositionalEquality as Eq
 open Eq.≡-Reasoning
-open import Axiom.Extensionality.Propositional as Ax
-
-open import Level
-
 
 {-
 TODO:
@@ -27,11 +23,11 @@ record MathMon (M : Set → Set) : Set₁ where
     unit : {A : Set} → A → M A
     mult : {A : Set} → M (M A) → M A
     -- functoriality
-    fun-composition : ∀ {A B C : Set} → ∀ {f : B → C} → ∀ {g : A → B} → fmap (f ∘ g) ≡ (fmap f) ∘ (fmap g)
+    fun-composition : ∀ {A B C : Set} {f : B → C} {g : A → B} → fmap (f ∘ g) ≡ (fmap f) ∘ (fmap g)
     fun-identity : ∀ {A : Set} → fmap {A} id ≡ id
     -- naturality
-    nat-unit : ∀ {A B : Set} → ∀ {f : A → B} → (fmap f) ∘ unit ≡ unit ∘ f
-    nat-comp : ∀ {A B : Set} → ∀ {f : A → B} → (fmap f) ∘ mult ≡ mult ∘ fmap (fmap f)
+    nat-unit : ∀ {A B : Set} {f : A → B} → (fmap f) ∘ unit ≡ unit ∘ f
+    nat-comp : ∀ {A B : Set} {f : A → B} → (fmap f) ∘ mult ≡ mult ∘ fmap (fmap f)
     -- consistency
     con-unit₁ : ∀ {A : Set} → mult {A} ∘ fmap unit ≡ id
     con-unit₂ : ∀ {A : Set} → mult {A} ∘ unit ≡ id
@@ -42,23 +38,23 @@ record ProgMon (M : Set → Set) : Set₁ where
     unit : {A : Set} → A -> M A
     _>>=_ : {A B : Set} → M A → (A → M B) -> M B
     -- monadicity
-    unitˡ : ∀ {A B : Set} → ∀ {x : A} → {f : A → M B}
+    unitˡ : ∀ {A B : Set} {x : A} {f : A → M B}
       → (unit x) >>= f ≡ f x
-    unitʳ : ∀ {A : Set} → ∀ {m : M A}
+    unitʳ : ∀ {A : Set} {m : M A}
       → m >>= unit ≡ m
-    assoc : ∀ {A B C : Set} → ∀ {m : M A} → ∀ {f : A → M B} → ∀ {g : B → M C}
+    assoc : ∀ {A B C : Set} {m : M A} {f : A → M B} {g : B → M C}
       → (m >>= f) >>= g ≡ m >>= λ{x → f x >>= g}
 
 record FunkMon (M : Set → Set) : Set₁ where
   field
-    unit  : {A : Set} → A -> M A
+    unit : {A : Set} → A -> M A
     _>=>_ : {A B C : Set} → (A → M B) → (B → M C) → (A → M C)
     -- monadicity
-    unitˡ : ∀ {A C : Set} → ∀ {g : A → M C}
+    unitˡ : ∀ {A C : Set} {g : A → M C}
       → unit >=> g ≡ g
-    unitʳ : ∀ {A B : Set} → ∀ {f : A → M B}
+    unitʳ : ∀ {A B : Set} {f : A → M B}
       → f >=> unit ≡ f
-    assoc : ∀ {A B C D : Set} → ∀ {f : A → M B} → ∀ {g : B → M C} → ∀ {h : C → M D}
+    assoc : ∀ {A B C D : Set} {f : A → M B} {g : B → M C} {h : C → M D}
       → (f >=> g) >=> h ≡ f >=> (g >=> h)
 
 
@@ -435,6 +431,9 @@ FunkMon→MathMon {M}
     fmap f x = (id >=> (unit ∘ f)) x
     mult : {A : Set} → M (M A) → M A
     mult x = (id >=> id) x
+    -- NOTE: these are the usual definitions but they have an ambiguous domain
+    -- fmap f x = ((const x) >=> (unit ∘ f)) _
+    -- mult x = ((const x) >=> id) _
     postulate
       -- TODO: I'm both unable to prove this and unable to find another way
       magic : {A B C : Set} → {f : A → M B} → {g : B → M C}

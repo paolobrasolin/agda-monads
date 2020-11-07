@@ -6,10 +6,14 @@ open import Relation.Binary.PropositionalEquality as Eq
 open Eq.≡-Reasoning
 open import Axiom.Extensionality.Propositional as Ax
 
+open import Level
+
+
 {-
 TODO:
   * use levels in definitions to account for more general sizes
   * set precedence of _>>=_ and _>=>_ w/ respect to ∘ in order to remove a few parantheses
+  * define `a ● p ● z = ext (λ {x} → cong a (cong-app p (z x)))` to simplify proofs
 -}
 
 postulate
@@ -301,6 +305,8 @@ FunkMon→ProgMon {M}
       -- TODO: I'm both unable to prove this and unable to find another way
       foo : {A B C : Set} → {f : A → M B} → {g : B → M C} → ∀ {x : A}
         → (f >=> g) x ≡ ((id >=> g) ∘ f) x
+      bar : {A B C : Set} → {f : A → M B} → {g : B → M C} → ∀ {x : A}
+        → (f >=> g) x ≡ ((id >=> g) ∘ (f >=> id)) x
 
 
 MathMon→FunkMon : {M : Set → Set} → MathMon M → FunkMon M
@@ -352,9 +358,6 @@ MathMon→FunkMon {M}
   where
     _>=>_ : {A B C : Set} → (A → M B) → (B → M C) → A → M C
     _>=>_ f g x = mult (fmap g (f x))
-    -- _●_●_ : {!!} -- TODO: finish this helper to rewrite the proofs
-    -- a ● p ● z = ext (λ {x} → cong a (cong-app p (z x)))
-
 
 FunkMon→MathMon : {M : Set → Set} → FunkMon M → MathMon M
 FunkMon→MathMon {M}
@@ -374,8 +377,8 @@ FunkMon→MathMon {M}
       begin
         fmap (f ∘ g)                               ≡⟨⟩
         id >=> (unit ∘ (f ∘ g))                    ≡⟨ {!!} ⟩
-        id >=> ((unit ∘ g) >=> (unit ∘ f))         ≡⟨ {!!} ⟩
-        ((id >=> (unit ∘ g)) >=> (unit ∘ f))       ≡⟨ {!!} ⟩
+        id >=> ((unit ∘ g) >=> (unit ∘ f))         ≡⟨ sym assoc ⟩
+        (id >=> (unit ∘ g)) >=> (unit ∘ f)         ≡⟨ ext foo ⟩
         (id >=> (unit ∘ f)) ∘ (id >=> (unit ∘ g))  ≡⟨⟩
         fmap f ∘ fmap g
       ∎
@@ -389,7 +392,7 @@ FunkMon→MathMon {M}
     ; nat-unit = λ {_} {_} {f} →
       begin
         fmap f ∘ unit               ≡⟨⟩
-        (id >=> (unit ∘ f)) ∘ unit  ≡⟨ {!!} ⟩
+        (id >=> (unit ∘ f)) ∘ unit  ≡⟨ ext (sym foo) ⟩
         unit >=> (unit ∘ f)         ≡⟨ unitˡ ⟩
         unit ∘ f
       ∎
@@ -404,12 +407,26 @@ FunkMon→MathMon {M}
       begin
         mult ∘ fmap unit                      ≡⟨⟩
         (id >=> id) ∘ (id >=> (unit ∘ unit))  ≡⟨ {!!} ⟩
+        (id >=> id) ∘ ((id >=> unit) ∘ unit)  ≡⟨ {!!} ⟩
+        (id >=> id) ∘ (id ∘ unit)             ≡⟨⟩
+        (id >=> id) ∘ unit                    ≡⟨ ext (sym foo) ⟩
+        (unit >=> id)                         ≡⟨ unitˡ ⟩
         id
       ∎
+    {-
+    ; con-unit₂ =
+      begin
+      mult ∘ unit              ≡⟨⟩
+      (λ x → (mult ∘ unit) x)  ≡⟨⟩
+      (λ x → unit x >>= id)    ≡⟨ ext unitˡ ⟩
+      (λ x → id x)             ≡⟨⟩
+      id
+      ∎
+    -}
     ; con-unit₂ =
       begin
         mult ∘ unit         ≡⟨⟩
-        (id >=> id) ∘ unit  ≡⟨ {!!} ⟩
+        (id >=> id) ∘ unit  ≡⟨ ext (sym foo) ⟩
         unit >=> id         ≡⟨ unitˡ ⟩
         id
       ∎
@@ -423,7 +440,11 @@ FunkMon→MathMon {M}
     fmap : {A B : Set} → (A → B) → M A → M B
     fmap f x = (id >=> (unit ∘ f)) x
     mult : {A : Set} → M (M A) → M A
-    mult x = (id >=> id) x
+    mult x = (id >=> id) x -- prima id è su M (M A), seconda su M A
+    postulate
+      -- TODO: I'm both unable to prove this and unable to find another way
+      foo : {A B C : Set} → {f : A → M B} → {g : B → M C} → ∀ {x : A}
+        → (f >=> g) x ≡ ((id >=> g) ∘ f) x
 
 
 
